@@ -7,6 +7,9 @@ whisperRecognition:
   modelPath: "whisper/base.en.pt"
   lang: "en"
 
+picoVoice:
+  keywordPath: "config/Hey-Labs_en_mac_v3_0_0.ppn"
+  
 ollama:
   url: "http://localhost:11434/api/generate"
   model: "mistral"

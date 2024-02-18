@@ -13,9 +13,9 @@ import numpy as np
 import pyaudio
 import whisper
 
-BACK_COLOR = (0,0,0)
-REC_COLOR = (255,0,0)
-TEXT_COLOR = (255,255,255)
+BACK_COLOR = (0, 0, 0)
+REC_COLOR = (255, 0, 0)
+TEXT_COLOR = (255, 255, 255)
 REC_SIZE = 80
 FONT_SIZE = 24
 WIDTH = 320
@@ -29,14 +29,15 @@ INPUT_FORMAT = pyaudio.paInt16
 INPUT_CHANNELS = 1
 INPUT_RATE = 16000
 INPUT_CHUNK = 1024
-OLLAMA_REST_HEADERS = {'Content-Type': 'application/json'}
-INPUT_CONFIG_PATH ="assistant.yaml"
+OLLAMA_REST_HEADERS = {"Content-Type": "application/json"}
+INPUT_CONFIG_PATH = "assistant.yaml"
+
 
 class Assistant:
     def __init__(self):
         self.config = self.init_config()
 
-        programIcon = pygame.image.load('assistant.png')
+        programIcon = pygame.image.load("assistant.png")
 
         self.clock = pygame.time.Clock()
         pygame.display.set_icon(programIcon)
@@ -47,15 +48,17 @@ class Assistant:
 
         self.audio = pyaudio.PyAudio()
 
-        self.tts = pyttsx3.init("nsss");
-        self.tts.setProperty('rate', self.tts.getProperty('rate') - 20)
+        self.tts = pyttsx3.init("nsss")
+        self.tts.setProperty("rate", self.tts.getProperty("rate") - 20)
 
         try:
-            self.audio.open(format=INPUT_FORMAT,
-                            channels=INPUT_CHANNELS,
-                            rate=INPUT_RATE,
-                            input=True,
-                            frames_per_buffer=INPUT_CHUNK).close()
+            self.audio.open(
+                format=INPUT_FORMAT,
+                channels=INPUT_CHANNELS,
+                rate=INPUT_RATE,
+                input=True,
+                frames_per_buffer=INPUT_CHUNK,
+            ).close()
         except Exception:
             self.wait_exit()
 
@@ -84,7 +87,7 @@ class Assistant:
         class Inst:
             pass
 
-        with open('assistant.yaml', encoding='utf-8') as data:
+        with open("assistant.yaml", encoding="utf-8") as data:
             configYaml = yaml.safe_load(data)
 
         config = Inst()
@@ -101,14 +104,18 @@ class Assistant:
         config.ollama.model = configYaml["ollama"]["model"]
 
         config.whisperRecognition = Inst()
-        config.whisperRecognition.modelPath = configYaml["whisperRecognition"]["modelPath"]
+        config.whisperRecognition.modelPath = configYaml["whisperRecognition"][
+            "modelPath"
+        ]
         config.whisperRecognition.lang = configYaml["whisperRecognition"]["lang"]
 
         return config
 
     def display_rec_start(self):
         self.windowSurface.fill(BACK_COLOR)
-        pygame.draw.circle(self.windowSurface, REC_COLOR, (WIDTH/2, HEIGHT/2), REC_SIZE)
+        pygame.draw.circle(
+            self.windowSurface, REC_COLOR, (WIDTH / 2, HEIGHT / 2), REC_SIZE
+        )
         pygame.display.flip()
 
     def display_sound_energy(self, energy):
@@ -118,51 +125,62 @@ class Assistant:
         MAX_AMPLITUDE = 100
 
         self.windowSurface.fill(BACK_COLOR)
-        amplitude = int(MAX_AMPLITUDE*energy)
-        hspace, vspace = 2*KWIDTH, int(KHEIGHT/2)
-        def rect_coords(x, y):
-            return (int(x-KWIDTH/2), int(y-KHEIGHT/2),
-                    KWIDTH, KHEIGHT)
-        for i in range(-int(np.floor(COL_COUNT/2)), int(np.ceil(COL_COUNT/2))):
-            x, y, count = WIDTH/2+(i*hspace), HEIGHT/2, amplitude-2*abs(i)
+        amplitude = int(MAX_AMPLITUDE * energy)
+        hspace, vspace = 2 * KWIDTH, int(KHEIGHT / 2)
 
-            mid = int(np.ceil(count/2))
+        def rect_coords(x, y):
+            return (int(x - KWIDTH / 2), int(y - KHEIGHT / 2), KWIDTH, KHEIGHT)
+
+        for i in range(-int(np.floor(COL_COUNT / 2)), int(np.ceil(COL_COUNT / 2))):
+            x, y, count = WIDTH / 2 + (i * hspace), HEIGHT / 2, amplitude - 2 * abs(i)
+
+            mid = int(np.ceil(count / 2))
             for i in range(0, mid):
-                offset = i*(KHEIGHT+vspace)
-                pygame.draw.rect(self.windowSurface, RED_CENTER,
-                                rect_coords(x, y+offset))
-                #mirror:
-                pygame.draw.rect(self.windowSurface, RED_CENTER,
-                                rect_coords(x, y-offset))
+                offset = i * (KHEIGHT + vspace)
+                pygame.draw.rect(
+                    self.windowSurface, RED_CENTER, rect_coords(x, y + offset)
+                )
+                # mirror:
+                pygame.draw.rect(
+                    self.windowSurface, RED_CENTER, rect_coords(x, y - offset)
+                )
         pygame.display.flip()
 
     def display_message(self, text):
         self.windowSurface.fill(BACK_COLOR)
 
-        label = self.font.render(text
-                                 if (len(text)<MAX_TEXT_LEN_DISPLAY)
-                                 else (text[0:MAX_TEXT_LEN_DISPLAY]+"..."),
-                                 1,
-                                 TEXT_COLOR)
+        label = self.font.render(
+            (
+                text
+                if (len(text) < MAX_TEXT_LEN_DISPLAY)
+                else (text[0:MAX_TEXT_LEN_DISPLAY] + "...")
+            ),
+            1,
+            TEXT_COLOR,
+        )
 
         size = label.get_rect()[2:4]
-        self.windowSurface.blit(label, (WIDTH/2 - size[0]/2, HEIGHT/2 - size[1]/2))
+        self.windowSurface.blit(
+            label, (WIDTH / 2 - size[0] / 2, HEIGHT / 2 - size[1] / 2)
+        )
 
         pygame.display.flip()
 
-    def waveform_from_mic(self, key = pygame.K_SPACE) -> np.ndarray:
+    def waveform_from_mic(self, key=pygame.K_SPACE) -> np.ndarray:
 
         self.display_rec_start()
 
-        stream = self.audio.open(format=INPUT_FORMAT,
-                                 channels=INPUT_CHANNELS,
-                                 rate=INPUT_RATE,
-                                 input=True,
-                                 frames_per_buffer=INPUT_CHUNK)
+        stream = self.audio.open(
+            format=INPUT_FORMAT,
+            channels=INPUT_CHANNELS,
+            rate=INPUT_RATE,
+            input=True,
+            frames_per_buffer=INPUT_CHUNK,
+        )
         frames = []
 
         while True:
-            pygame.event.pump() # process event queue
+            pygame.event.pump()  # process event queue
             pressed = pygame.key.get_pressed()
             if pressed[key]:
                 data = stream.read(INPUT_CHUNK)
@@ -173,36 +191,43 @@ class Assistant:
         stream.stop_stream()
         stream.close()
 
-        return np.frombuffer(b''.join(frames), np.int16).astype(np.float32) * (1 / 32768.0)
+        return np.frombuffer(b"".join(frames), np.int16).astype(np.float32) * (
+            1 / 32768.0
+        )
 
     def speech_to_text(self, waveform):
-        transcript = self.model.transcribe(waveform,
-                                           language = self.config.whisperRecognition.lang,
-                                           fp16=torch.cuda.is_available())
+        transcript = self.model.transcribe(
+            waveform,
+            language=self.config.whisperRecognition.lang,
+            fp16=torch.cuda.is_available(),
+        )
         text = transcript["text"]
 
-        print('\nMe:\n', text.strip())
+        print("\nMe:\n", text.strip())
         return text
-
 
     def ask_ollama(self, prompt, responseCallback):
         full_prompt = prompt if hasattr(self, "contextSent") else (prompt)
         self.contextSent = True
-        jsonParam= {"model": self.config.ollama.model,
-                        "stream":True,
-                        "context":self.context,
-                        "prompt":full_prompt}
-        response = requests.post(self.config.ollama.url,
-                     json=jsonParam,
-                     headers=OLLAMA_REST_HEADERS,
-                     stream=True,
-                     timeout=10)  # Set the timeout value as per your requirement
+        jsonParam = {
+            "model": self.config.ollama.model,
+            "stream": True,
+            "context": self.context,
+            "prompt": full_prompt,
+        }
+        response = requests.post(
+            self.config.ollama.url,
+            json=jsonParam,
+            headers=OLLAMA_REST_HEADERS,
+            stream=True,
+            timeout=10,
+        )  # Set the timeout value as per your requirement
         response.raise_for_status()
 
         tokens = []
         for line in response.iter_lines():
             body = json.loads(line)
-            token = body.get('response', '')
+            token = body.get("response", "")
             tokens.append(token)
 
             # the response streams one token at a time, process only at end of sentences
@@ -211,31 +236,32 @@ class Assistant:
                 responseCallback(current_response)
                 tokens = []
 
-            if 'error' in body:
-                responseCallback("Error: " + body['error'])
+            if "error" in body:
+                responseCallback("Error: " + body["error"])
 
-            if body.get('done', False) and 'context' in body:
-                self.context = body['context']
+            if body.get("done", False) and "context" in body:
+                self.context = body["context"]
 
     def text_to_speech(self, text):
-        print('\nAI:\n', text.strip())
+        print("\nAI:\n", text.strip())
+        return
 
-        tempPath = './temp.wav'
-        self.tts.save_to_file(text , tempPath)
+        tempPath = "./temp.wav"
+        self.tts.save_to_file(text, tempPath)
         self.tts.runAndWait()
 
         # Fix 64bit RIFF id for Apple Silicon
         data, samplerate = soundfile.read(tempPath)
         soundfile.write(tempPath, data, samplerate)
 
-        wf = wave.open(tempPath, 'rb')
+        wf = wave.open(tempPath, "rb")
 
-        stream = self.audio.open(format =
-                        self.audio.get_format_from_width(wf.getsampwidth()),
-                        channels = wf.getnchannels(),
-                        rate = wf.getframerate(),
-                        output = True)
-
+        stream = self.audio.open(
+            format=self.audio.get_format_from_width(wf.getsampwidth()),
+            channels=wf.getnchannels(),
+            rate=wf.getframerate(),
+            output=True,
+        )
 
         chunkSize = 1024
         chunk = wf.readframes(chunkSize)
@@ -246,8 +272,8 @@ class Assistant:
             self.display_sound_energy(energy_of_chunk)
             chunk = wf.readframes(chunkSize)
 
-
         wf.close()
+
 
 def main():
     pygame.init()
@@ -270,7 +296,8 @@ def main():
                 ass.display_message(ass.config.messages.pressSpace)
 
             if event.type == pygame.locals.QUIT:
-                ass.shutdown()
+                # ass.shutdown()
+                pass
 
 
 if __name__ == "__main__":
