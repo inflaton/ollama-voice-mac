@@ -21,6 +21,7 @@ from pathlib import Path
 import whisper
 import yaml
 import numpy as np
+from timeit import default_timer as timer
 
 
 def record_audio(stream, rate, frame_length, record_seconds):
@@ -233,6 +234,9 @@ def init_config():
     config.ollama.url = configYaml["ollama"]["url"]
     config.ollama.model = configYaml["ollama"]["model"]
 
+    config.gemini = Inst()
+    config.gemini.model = configYaml["gemini"]["model"]
+
     config.whisperRecognition = Inst()
     config.whisperRecognition.modelPath = configYaml["whisperRecognition"]["modelPath"]
     config.whisperRecognition.lang = configYaml["whisperRecognition"]["lang"]
@@ -321,6 +325,7 @@ def main():
                         )  # Getting the current timestamp
 
                         # Sending frame and user input to Gemini AI model and generating a response
+                        start = timer()
                         generated_text = send_frame_with_text_to_llm(
                             frame,
                             previous_texts,
@@ -329,6 +334,10 @@ def main():
                             config,
                             llm_model_type,
                         )
+                        total_time = timer() - start
+                        total_time = f"{total_time:.3f} s"
+                        print("Time used:", total_time)
+
                         print(
                             f"Timestamp: {timestamp}, Generated Text: {generated_text}"
                         )
@@ -340,9 +349,7 @@ def main():
                         )
 
                         # Adding the generated text to the frame
-                        text_to_add = (
-                            f"{timestamp}: {llm_model_type} - {generated_text}"
-                        )
+                        text_to_add = f"{timestamp}: {llm_model_type} ({total_time}) - {generated_text}"
                         add_text_to_frame(frame, text_to_add)
 
                         # Saving the frame
