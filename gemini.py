@@ -3,6 +3,7 @@ import pvporcupine
 from google.cloud import speech, texttospeech
 import pyaudio
 import torch
+import pyttsx3
 import struct
 import os
 import cv2
@@ -18,6 +19,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 import whisper
 import yaml
+import soundfile
 import numpy as np
 
 
@@ -74,6 +76,12 @@ def text_to_speech_google(text, client):
     sound = AudioSegment.from_mp3("output.mp3")
     # Playing the sound
     play(sound)
+
+
+def text_to_speech(tts, text):
+    print("\nAI:\n", text.strip())
+    tts.say(text)
+    tts.runAndWait()
 
 
 def wrap_text(text, line_length):
@@ -218,6 +226,7 @@ def main():
 
     config = init_config()
     print(config.messages.loadingModel)
+
     model = whisper.load_model(config.whisperRecognition.modelPath)
 
     # Loading the access key and keyword path from environment variables
@@ -241,6 +250,13 @@ def main():
         frames_per_buffer=porcupine.frame_length,
     )
 
+    tts = pyttsx3.init("nsss")
+    tts.setProperty("rate", tts.getProperty("rate") - 20)
+
+    # tts = pyttsx3.init()
+    # tts.setProperty("rate", 150)
+    # tts.setProperty("volume", 1)
+
     genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
     # Initializing Google Cloud TTS API client
     # tts_client = texttospeech.TextToSpeechClient()
@@ -254,7 +270,7 @@ def main():
 
         previous_texts = deque(maxlen=5)
 
-        print(config.conversation.greeting)
+        text_to_speech(tts, config.conversation.greeting)
 
         while True:
             try:
@@ -317,6 +333,8 @@ def main():
 
                         # Converting AI response to speech and playing it
                         # text_to_speech_google(generated_text, tts_client)
+
+                        text_to_speech(tts, generated_text)
 
                     else:  # If there is no voice input
                         print("No user input, exiting the loop.")
