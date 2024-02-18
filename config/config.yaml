@@ -12,7 +12,11 @@ picoVoice:
   
 ollama:
   url: "http://localhost:11434/api/generate"
-  model: "mistral"
+  model: "llava"
+  # model: "bakllava"
+
+gemini:
+  model: "gemini-pro-vision"
 
 conversation:
   greeting: "Hi, how can I help you?"
