@@ -134,12 +134,8 @@ def save_temp_frame(frame, filename, directory="./temp"):
     return filepath  # Returning the path of the saved file
 
 
-def ask_ollama_with_image(
-    image_path_or_url,
-    model="llava",
-    url="http://localhost:11434/api/generate",
-    user_input="What is in this picture?",
-):
+# Function to encode the image
+def encode_image(image_path_or_url):
     if image_path_or_url.startswith("http"):
         response = requests.get(image_path_or_url)
         buffered = BytesIO(response.content)
@@ -148,8 +144,45 @@ def ask_ollama_with_image(
         with open(image_path_or_url, "rb") as image_file:
             image_base64 = base64.b64encode(image_file.read()).decode("utf-8")
 
-    prompt = f"Please respond to the following message, using no more than 20 words. Message: {user_input}"
+    return image_base64
 
+
+def ask_openai_with_image(
+    prompt,
+    base64_image,
+    model="gpt-4-vision-preview",
+    url="https://api.openai.com/v1/chat/completions",
+):
+    api_key = os.environ["OPENAI_API_KEY"]
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
+
+    payload = {
+        "model": model,
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                    },
+                ],
+            }
+        ],
+        "max_tokens": 300,
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+
+    json = response.json()
+    print(json)
+    return json["choices"][0]["message"]["content"]
+
+
+def ask_ollama_with_image(
+    prompt, image_base64, model="llava", url="http://localhost:11434/api/generate"
+):
     payload = {
         "model": model,
         "prompt": prompt,
@@ -176,12 +209,23 @@ def send_frame_with_text_to_llm(
 ):
     temp_file_path = save_temp_frame(frame, "temp.jpg")
 
-    if llm_model_type == "ollama":
-        return ask_ollama_with_image(
-            temp_file_path,
-            model=config.ollama.model,
-            url=config.ollama.url,
-            user_input=user_input,
+    if llm_model_type in ["ollama", "openai"]:
+        base64_image = encode_image(temp_file_path)
+        prompt = f"Please respond to the following message, using no more than 20 words. Message: {user_input}"
+
+        fn = (
+            ask_ollama_with_image
+            if llm_model_type == "ollama"
+            else ask_openai_with_image
+        )
+
+        params = config.ollama if llm_model_type == "ollama" else config.openai
+
+        return fn(
+            prompt,
+            base64_image,
+            model=params.model,
+            url=params.url,
         )
 
     img = PIL.Image.open(temp_file_path)
@@ -233,6 +277,10 @@ def init_config():
     config.ollama = Inst()
     config.ollama.url = configYaml["ollama"]["url"]
     config.ollama.model = configYaml["ollama"]["model"]
+
+    config.openai = Inst()
+    config.openai.url = configYaml["openai"]["url"]
+    config.openai.model = configYaml["openai"]["model"]
 
     config.gemini = Inst()
     config.gemini.model = configYaml["gemini"]["model"]

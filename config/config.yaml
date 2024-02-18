@@ -18,5 +18,9 @@ ollama:
 gemini:
   model: "gemini-pro-vision"
 
+openai:
+  url: "https://api.openai.com/v1/chat/completions"
+  model: "gpt-4-vision-preview"
+
 conversation:
   greeting: "Hi, how can I help you?"
